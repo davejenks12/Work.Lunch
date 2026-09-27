@@ -30,33 +30,19 @@ export const MapService = {
       // Add zoom control top right
       L.control.zoom({ position: 'topright' }).addTo(mapInstance);
 
-      // Primary Open-Source Tile Layer: OpenStreetMap standard tiles
+      // Primary 100% Free Open-Source Tile Layer: OpenStreetMap
       const osmTileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
       });
 
-      // CartoDB Dark Matter open-source tile layer
-      const darkTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>',
-        subdomains: 'abcd'
-      });
-
-      // Add dark tile layer to map
-      darkTileLayer.addTo(mapInstance);
-
-      // Tile error fallback to standard OSM tiles if Carto CDN fails
-      darkTileLayer.on('tileerror', () => {
-        if (!mapInstance.hasLayer(osmTileLayer)) {
-          osmTileLayer.addTo(mapInstance);
-        }
-      });
+      // Add OSM tile layer directly (No API Key needed)
+      osmTileLayer.addTo(mapInstance);
     } else {
       mapInstance.setView([lat, lng], zoom);
     }
 
-    // Crucial: Recalculate container bounds so map renders properly when unhidden
+    // Recalculate container bounds so map renders properly
     this.refresh();
 
     this.setUserLocation(lat, lng);
