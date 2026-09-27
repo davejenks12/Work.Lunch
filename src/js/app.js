@@ -502,6 +502,7 @@ async function executeSearch() {
         MapService.renderPlaces(places, (selectedPlace) => {
           UI.openSurpriseModal(selectedPlace);
         });
+        MapService.refresh();
       } else {
         if (gridViewEl) gridViewEl.classList.remove('hidden');
         if (mapViewEl) mapViewEl.classList.add('hidden');
