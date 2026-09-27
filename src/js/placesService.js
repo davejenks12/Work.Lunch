@@ -1,5 +1,5 @@
 /**
- * Places & Geocoding Service for Lunch Finder
+ * Places & Geocoding Service for WorkLunch
  * Integrates HTML5 Geolocation, Nominatim Geocoding/Autocomplete, 
  * Overpass OSM API & Google Places API for live nearby places, 
  * walking time duration math, Google ratings, photos, and review summaries.

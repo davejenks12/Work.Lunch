@@ -1,5 +1,5 @@
 /**
- * Main Application Controller for Lunch Finder
+ * Main Application Controller for WorkLunch
  * Orchestrates step wizard navigation, state management, map rendering, and events.
  */
 

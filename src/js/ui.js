@@ -1,5 +1,5 @@
 /**
- * UI Renderer Module for Lunch Finder
+ * UI Renderer Module for WorkLunch
  * Handles rendering step wizard UI, restaurant cards with Google ratings & reviews, 
  * cuisine pills, autocomplete, and modal popups.
  */

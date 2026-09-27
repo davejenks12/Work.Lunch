@@ -1,12 +1,15 @@
 /**
- * Storage Manager for Lunch Finder
+ * Storage Manager for WorkLunch
  * Handles reading and writing persistent state to localStorage.
  */
 
 const STORAGE_KEYS = {
-  DIETARY: 'lunch_finder_dietary',
-  GOOGLE_API_KEY: 'lunch_finder_google_api_key',
-  LAST_LOCATION: 'lunch_finder_last_location'
+  DIETARY: 'worklunch_dietary',
+  LEGACY_DIETARY: 'lunch_finder_dietary',
+  GOOGLE_API_KEY: 'worklunch_google_api_key',
+  LEGACY_GOOGLE_API_KEY: 'lunch_finder_google_api_key',
+  LAST_LOCATION: 'worklunch_last_location',
+  LEGACY_LAST_LOCATION: 'lunch_finder_last_location'
 };
 
 export const Storage = {
@@ -16,7 +19,7 @@ export const Storage = {
    */
   getDietaryPreferences() {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.DIETARY);
+      const data = localStorage.getItem(STORAGE_KEYS.DIETARY) || localStorage.getItem(STORAGE_KEYS.LEGACY_DIETARY);
       return data ? JSON.parse(data) : [];
     } catch (e) {
       console.error('Error reading dietary preferences from storage:', e);
@@ -41,10 +44,13 @@ export const Storage = {
    * @returns {string}
    */
   getGoogleApiKey() {
+    if (window.WORKLUNCH_CONFIG && window.WORKLUNCH_CONFIG.GOOGLE_MAPS_API_KEY) {
+      return window.WORKLUNCH_CONFIG.GOOGLE_MAPS_API_KEY.trim();
+    }
     if (window.LUNCH_FINDER_CONFIG && window.LUNCH_FINDER_CONFIG.GOOGLE_MAPS_API_KEY) {
       return window.LUNCH_FINDER_CONFIG.GOOGLE_MAPS_API_KEY.trim();
     }
-    return localStorage.getItem(STORAGE_KEYS.GOOGLE_API_KEY) || '';
+    return localStorage.getItem(STORAGE_KEYS.GOOGLE_API_KEY) || localStorage.getItem(STORAGE_KEYS.LEGACY_GOOGLE_API_KEY) || '';
   },
 
   /**
@@ -75,7 +81,7 @@ export const Storage = {
    */
   getLastLocation() {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.LAST_LOCATION);
+      const data = localStorage.getItem(STORAGE_KEYS.LAST_LOCATION) || localStorage.getItem(STORAGE_KEYS.LEGACY_LAST_LOCATION);
       return data ? JSON.parse(data) : null;
     } catch (e) {
       return null;
