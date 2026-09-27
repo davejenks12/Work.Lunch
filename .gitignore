@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Vercel & IDE
+.vercel
+.vscode/
+.idea/
+*.log
+
+# OS generated
+.DS_Store
+Thumbs.db

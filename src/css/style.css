@@ -1,0 +1,135 @@
+/* Custom Scrollbar for Horizontal Cuisine Pills */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Custom Scrollbar for Dropdowns & Lists */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.6);
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* Leaflet Dark Mode Tiles & Map Customization */
+.leaflet-container {
+  background: #0f172a !important;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+
+/* Tile filter for subtle dark theme styling */
+.leaflet-tile {
+  filter: brightness(0.75) contrast(1.1) saturate(0.9);
+}
+
+.leaflet-popup-content-wrapper {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+  border: 1px solid #334155 !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5) !important;
+  padding: 0.5rem !important;
+}
+.leaflet-popup-tip {
+  background: #0f172a !important;
+  border: 1px solid #334155 !important;
+}
+
+/* Map Markers Styling */
+.custom-user-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.user-pin-pulse {
+  width: 24px;
+  height: 24px;
+  background-color: rgba(34, 197, 94, 0.4);
+  border: 3px solid #22c55e;
+  border-radius: 50%;
+  box-shadow: 0 0 15px rgba(34, 197, 94, 0.8);
+  animation: pulse-ring 2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+  }
+  70% {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 12px rgba(34, 197, 94, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+  }
+}
+
+/* Card Selection States */
+.style-card.active {
+  border-color: #22c55e !important;
+  background-color: rgba(34, 197, 94, 0.08) !important;
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.15);
+}
+.style-card.active .dot {
+  display: block !important;
+}
+
+.price-btn.active {
+  border-color: #22c55e !important;
+  background-color: rgba(34, 197, 94, 0.12) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 15px rgba(34, 197, 94, 0.2);
+}
+
+.walk-time-btn.active {
+  border-color: #22c55e !important;
+  background-color: rgba(34, 197, 94, 0.12) !important;
+  color: #4ade80 !important;
+  box-shadow: 0 0 15px rgba(34, 197, 94, 0.2);
+}
+
+.dietary-chip.active {
+  border-color: #22c55e !important;
+  background-color: rgba(34, 197, 94, 0.15) !important;
+  color: #4ade80 !important;
+}
+
+.cuisine-pill.active {
+  background-color: #22c55e !important;
+  color: #020617 !important;
+  font-weight: 800 !important;
+  box-shadow: 0 4px 14px rgba(34, 197, 94, 0.3);
+}
+
+/* Wizard Step Animation */
+.wizard-step {
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+.wizard-step.hidden {
+  display: none !important;
+}
+
+/* Shimmer Loading Effect */
+.shimmer {
+  background: linear-gradient(90deg, #1e293b 0%, #334155 50%, #1e293b 100%);
+  background-size: 200% 100%;
+  animation: shimmer-anim 1.5s infinite;
+}
+@keyframes shimmer-anim {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
