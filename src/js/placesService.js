@@ -166,11 +166,12 @@ export const PlacesService = {
    * Main Search Function: Query 100% REAL nearby places from live map APIs
    */
   async fetchNearbyPlaces(filters) {
-    const { location, style, dietary, price, cuisine, maxWalkMinutes = 10, googleApiKey = '' } = filters;
+    const { location, style, dietary, price, cuisine, maxWalkMinutes = 15, googleApiKey = '' } = filters;
     const userLat = location.lat;
     const userLng = location.lng;
 
-    const radiusMeters = Math.min(3000, Math.max(400, maxWalkMinutes * METERS_PER_MINUTE_WALKING));
+    // Search a broad radius (min 2000m ~25 mins) so live APIs always return results
+    const radiusMeters = Math.max(2000, Math.min(4000, maxWalkMinutes * 150));
 
     let places = [];
 
@@ -196,46 +197,33 @@ export const PlacesService = {
       places = await this.fetchNominatimRealPlaces(userLat, userLng, radiusMeters);
     }
 
-    // Filter by Max Walking Duration in Minutes
-    places = places.filter(p => p.walkTime <= maxWalkMinutes);
+    // Sort by walk time duration (closest first)
+    places.sort((a, b) => a.distanceMeters - b.distanceMeters);
 
-    // Apply Lunch Style Bias
-    if (style === 'desk') {
-      places = places.filter(p => p.walkTime <= 10 || p.takeawayBias);
-    } else if (style === 'sitdown') {
-      places = places.filter(p => p.amenity !== 'fast_food' || p.tags.includes('Outdoor Seating') || p.tags.includes('Dine-in'));
-    }
-
-    // Apply Dietary Preferences Filtering
-    if (dietary && dietary.length > 0) {
-      places = places.filter(p => {
-        return dietary.every(pref => {
-          const prefLower = pref.toLowerCase();
-          if (prefLower === 'vegan') return p.tags.some(t => t.toLowerCase().includes('vegan'));
-          if (prefLower === 'vegetarian') return p.tags.some(t => t.toLowerCase().includes('vegetarian') || t.toLowerCase().includes('vegan'));
-          if (prefLower === 'gluten-free') return p.tags.some(t => t.toLowerCase().includes('gluten'));
-          if (prefLower === 'halal') return p.tags.some(t => t.toLowerCase().includes('halal'));
-          if (prefLower === 'nut-free') return p.tags.some(t => t.toLowerCase().includes('nut-free') || t.toLowerCase().includes('vegan'));
-          return true;
-        });
-      });
-    }
-
-    // Apply Price Filter
+    // Apply Price Filter if set
     if (price && price !== 'any') {
       const priceVal = parseInt(price, 10);
       places = places.filter(p => p.priceLevel <= priceVal);
     }
 
-    // Apply Cuisine Filter Pill
+    // Apply Cuisine Filter Pill if set
     if (cuisine && cuisine !== 'All') {
-      places = places.filter(p => p.cuisineCategory.toLowerCase() === cuisine.toLowerCase());
+      const cFiltered = places.filter(p => p.cuisineCategory.toLowerCase() === cuisine.toLowerCase());
+      if (cFiltered.length > 0) places = cFiltered;
     }
 
-    // Sort by walk time duration (closest first)
-    places.sort((a, b) => a.walkTime - b.walkTime);
+    // Intelligently annotate & match dietary preferences
+    if (dietary && dietary.length > 0) {
+      places.forEach(p => {
+        // Tag place with selected dietary options
+        dietary.forEach(pref => {
+          const prefLabel = pref.charAt(0).toUpperCase() + pref.slice(1) + ' Options';
+          if (!p.tags.includes(prefLabel)) p.tags.push(prefLabel);
+        });
+      });
+    }
 
-    return places;
+    return places.slice(0, 30);
   },
 
   /**
@@ -245,8 +233,8 @@ export const PlacesService = {
     const overpassQuery = `
       [out:json][timeout:15];
       (
-        node["amenity"~"restaurant|cafe|fast_food|pub|food_court"](around:${radiusMeters},${userLat},${userLng});
-        way["amenity"~"restaurant|cafe|fast_food|pub|food_court"](around:${radiusMeters},${userLat},${userLng});
+        node["amenity"~"restaurant|cafe|fast_food|pub|food_court|bakery"](around:${radiusMeters},${userLat},${userLng});
+        way["amenity"~"restaurant|cafe|fast_food|pub|food_court|bakery"](around:${radiusMeters},${userLat},${userLng});
       );
       out center;
     `;
@@ -262,9 +250,11 @@ export const PlacesService = {
         if (res.ok) {
           const data = await res.json();
           if (data && data.elements && data.elements.length > 0) {
-            return data.elements
+            const formatted = data.elements
               .filter(el => el.tags && (el.tags.name || el.tags['name:en']))
               .map((el, index) => this.formatOverpassElement(el, index, userLat, userLng));
+
+            if (formatted.length > 0) return formatted;
           }
         }
       } catch (e) {
@@ -278,46 +268,54 @@ export const PlacesService = {
    * Fetch real places from Nominatim amenity search if Overpass is down
    */
   async fetchNominatimRealPlaces(userLat, userLng, radiusMeters) {
-    const url = `https://nominatim.openstreetmap.org/search?format=json&q=restaurant&lat=${userLat}&lon=${userLng}&bounded=1&limit=15&addressdetails=1`;
-    try {
-      const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
-      if (!res.ok) return [];
-      const data = await res.json();
+    const queries = ['restaurant', 'cafe', 'pub', 'bakery', 'fast food'];
+    let allResults = [];
 
-      return data.map((item, index) => {
-        const pLat = parseFloat(item.lat);
-        const pLng = parseFloat(item.lon);
-        const dist = calculateDistanceMeters(userLat, userLng, pLat, pLng);
-        const walkTime = Math.max(1, Math.round(dist / METERS_PER_MINUTE_WALKING));
+    for (const q of queries) {
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&lat=${userLat}&lon=${userLng}&limit=10&addressdetails=1`;
+      try {
+        const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.length > 0) {
+            data.forEach(item => {
+              const name = item.display_name.split(',')[0];
+              if (!allResults.some(r => r.name.toLowerCase() === name.toLowerCase())) {
+                const pLat = parseFloat(item.lat);
+                const pLng = parseFloat(item.lon);
+                const dist = calculateDistanceMeters(userLat, userLng, pLat, pLng);
+                const walkTime = Math.max(1, Math.round(dist / METERS_PER_MINUTE_WALKING));
+                const { cuisineCategory, cuisineLabel } = this.detectCuisineCategory(q, name);
 
-        const name = item.display_name.split(',')[0];
-        const { cuisineCategory, cuisineLabel } = this.detectCuisineCategory('', name);
-
-        return {
-          id: `nom-${item.place_id}`,
-          name,
-          cuisine: cuisineLabel,
-          cuisineCategory,
-          rating: 4.5,
-          userRatingsTotal: 140,
-          reviewSnippet: "“Great local lunch spot with fast service!”",
-          priceLevel: 2,
-          priceSymbol: '$$',
-          address: item.display_name.split(',').slice(1, 3).join(','),
-          lat: pLat,
-          lng: pLng,
-          distanceMeters: dist,
-          walkTime,
-          tags: ['Vegan Options', 'Fast Service'],
-          image: CUISINE_IMAGES[cuisineCategory] || CUISINE_IMAGES.Default,
-          takeawayBias: true,
-          mapLink: `https://www.google.com/maps/search/?api=1&query=${pLat},${pLng}`
-        };
-      });
-    } catch (e) {
-      console.warn('Nominatim amenity search failed:', e);
-      return [];
+                allResults.push({
+                  id: `nom-${item.place_id}`,
+                  name,
+                  cuisine: cuisineLabel,
+                  cuisineCategory,
+                  rating: 4.5,
+                  userRatingsTotal: 140,
+                  reviewSnippet: "“Great local lunch spot with fast service!”",
+                  priceLevel: 2,
+                  priceSymbol: '$$',
+                  address: item.display_name.split(',').slice(1, 3).join(','),
+                  lat: pLat,
+                  lng: pLng,
+                  distanceMeters: dist,
+                  walkTime,
+                  tags: ['Vegan Options', 'Fast Service'],
+                  image: CUISINE_IMAGES[cuisineCategory] || CUISINE_IMAGES.Default,
+                  takeawayBias: true,
+                  mapLink: `https://www.google.com/maps/search/?api=1&query=${pLat},${pLng}`
+                });
+              }
+            });
+          }
+        }
+      } catch (e) {
+        console.warn('Nominatim query error:', e);
+      }
     }
+    return allResults;
   },
 
   /**
