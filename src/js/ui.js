@@ -4,6 +4,31 @@
  * cuisine pills, autocomplete, and modal popups.
  */
 
+/**
+ * HTML Escaper helper for XSS defense
+ */
+function escapeHtml(str) {
+  if (typeof str !== 'string') return str || '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/**
+ * URL sanitizer helper
+ */
+function sanitizeUrl(url) {
+  if (!url || typeof url !== 'string') return '#';
+  const trimmed = url.trim();
+  if (trimmed.startsWith('https://') || trimmed.startsWith('http://') || trimmed.startsWith('/')) {
+    return escapeHtml(trimmed);
+  }
+  return '#';
+}
+
 export const DIETARY_OPTIONS = [
   { id: 'vegan', label: 'Vegan', icon: '🌱' },
   { id: 'vegetarian', label: 'Vegetarian', icon: '🥗' },
@@ -42,9 +67,9 @@ export const UI = {
       return `
         <button type="button" 
                 class="dietary-chip p-3.5 rounded-xl bg-slate-950 border-2 border-slate-800 hover:border-brand-500 flex items-center space-x-2.5 transition text-left ${isActive ? 'active' : ''}" 
-                data-id="${option.id}">
-          <span class="text-lg">${option.icon}</span>
-          <span class="text-xs font-bold text-slate-200">${option.label}</span>
+                data-id="${escapeHtml(option.id)}">
+          <span class="text-lg">${escapeHtml(option.icon)}</span>
+          <span class="text-xs font-bold text-slate-200">${escapeHtml(option.label)}</span>
         </button>
       `;
     }).join('');
@@ -106,7 +131,7 @@ export const UI = {
     list.innerHTML = suggestions.map((item, index) => `
       <div class="autocomplete-item px-4 py-3 hover:bg-slate-800 cursor-pointer transition flex items-center space-x-3 text-xs text-slate-200 border-b border-slate-800/60 last:border-0" data-index="${index}">
         <i data-lucide="map-pin" class="w-4 h-4 text-brand-400 flex-shrink-0"></i>
-        <span class="truncate font-medium">${item.name}</span>
+        <span class="truncate font-medium">${escapeHtml(item.name)}</span>
       </div>
     `).join('');
 
@@ -141,30 +166,30 @@ export const UI = {
         
         <!-- Image Banner -->
         <div class="relative h-48 bg-slate-950 overflow-hidden">
-          <img src="${place.image}" alt="${place.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+          <img src="${sanitizeUrl(place.image)}" alt="${escapeHtml(place.name)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
           <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/30 to-transparent"></div>
           
           <!-- Google Rating & Reviews Badge -->
           <div class="absolute top-3 left-3 bg-slate-950/90 backdrop-blur-md px-2.5 py-1 rounded-xl border border-slate-800 text-amber-400 font-extrabold text-xs flex items-center space-x-1.5 shadow-lg">
             <span>⭐</span>
-            <span>${place.rating}</span>
-            <span class="text-slate-400 font-normal text-[10px]">(${place.userRatingsTotal || 120}+ reviews)</span>
+            <span>${escapeHtml(String(place.rating))}</span>
+            <span class="text-slate-400 font-normal text-[10px]">(${escapeHtml(String(place.userRatingsTotal || 120))}+ reviews)</span>
           </div>
 
           <!-- Price & Walk Duration Badge -->
           <div class="absolute top-3 right-3 bg-slate-950/90 backdrop-blur-md px-2.5 py-1 rounded-xl border border-slate-800 text-slate-200 font-extrabold text-xs flex items-center space-x-2 shadow-lg">
-            <span class="text-emerald-400 font-extrabold">${place.priceSymbol}</span>
+            <span class="text-emerald-400 font-extrabold">${escapeHtml(place.priceSymbol)}</span>
             <span class="text-slate-600">•</span>
             <span class="text-slate-300 font-semibold flex items-center space-x-1">
               <i data-lucide="footprints" class="w-3 h-3 text-brand-400 inline"></i>
-              <span>${place.walkTime} min walk</span>
+              <span>${escapeHtml(String(place.walkTime))} min walk</span>
             </span>
           </div>
 
           <!-- Title Overlay -->
           <div class="absolute bottom-3 left-4 right-4">
-            <h3 class="font-black text-white text-lg leading-tight truncate drop-shadow-md">${place.name}</h3>
-            <p class="text-xs text-brand-400 font-bold">${place.cuisine}</p>
+            <h3 class="font-black text-white text-lg leading-tight truncate drop-shadow-md">${escapeHtml(place.name)}</h3>
+            <p class="text-xs text-brand-400 font-bold">${escapeHtml(place.cuisine)}</p>
           </div>
         </div>
 
@@ -176,30 +201,30 @@ export const UI = {
             <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1">
               <span>Google Review Summary</span>
             </div>
-            <p class="text-xs text-slate-300 italic line-clamp-2">${place.reviewSnippet || '“Consistently great lunch options and super fast service!”'}</p>
+            <p class="text-xs text-slate-300 italic line-clamp-2">${escapeHtml(place.reviewSnippet || '“Consistently great lunch options and super fast service!”')}</p>
           </div>
 
           <p class="text-[11px] text-slate-400 truncate flex items-center space-x-1">
             <i data-lucide="map-pin" class="w-3.5 h-3.5 text-brand-400 flex-shrink-0"></i>
-            <span class="truncate">${place.address}</span>
+            <span class="truncate">${escapeHtml(place.address)}</span>
           </p>
 
           <!-- Tags -->
           <div class="flex flex-wrap gap-1.5">
             ${place.tags.slice(0, 3).map(tag => `
               <span class="px-2 py-0.5 rounded-md bg-slate-800/80 text-emerald-400 text-[10px] font-semibold border border-slate-700/60">
-                ${tag}
+                ${escapeHtml(tag)}
               </span>
             `).join('')}
           </div>
 
           <!-- Card Actions -->
           <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between space-x-2">
-            <button class="card-map-btn flex-1 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center justify-center space-x-1" data-id="${place.id}">
+            <button class="card-map-btn flex-1 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center justify-center space-x-1" data-id="${escapeHtml(place.id)}">
               <i data-lucide="map-pin" class="w-3.5 h-3.5 text-brand-400"></i>
               <span>View on Map</span>
             </button>
-            <a href="${place.mapLink}" target="_blank" rel="noopener noreferrer" class="flex-1 py-2.5 px-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold transition flex items-center justify-center space-x-1">
+            <a href="${sanitizeUrl(place.mapLink)}" target="_blank" rel="noopener noreferrer" class="flex-1 py-2.5 px-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold transition flex items-center justify-center space-x-1">
               <span>Directions</span>
               <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
             </a>
@@ -229,8 +254,8 @@ export const UI = {
     bar.innerHTML = CUISINE_PILLS.map(c => {
       const isActive = c.toLowerCase() === activeCuisine.toLowerCase();
       return `
-        <button class="cuisine-pill px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${isActive ? 'active' : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800'}" data-cuisine="${c}">
-          ${c}
+        <button class="cuisine-pill px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${isActive ? 'active' : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800'}" data-cuisine="${escapeHtml(c)}">
+          ${escapeHtml(c)}
         </button>
       `;
     }).join('');
@@ -285,13 +310,13 @@ export const UI = {
   },
 
   /**
-   * Open & Render "Surprise Me!" Modal Popup (Without continuous bouncing)
+   * Open & Render "Surprise Me!" Modal Popup
    */
   openSurpriseModal(place, onPickAnother) {
     const modal = document.getElementById('surprise-modal');
     if (!modal || !place) return;
 
-    document.getElementById('surprise-img').src = place.image;
+    document.getElementById('surprise-img').src = sanitizeUrl(place.image);
     document.getElementById('surprise-title').textContent = place.name;
     document.getElementById('surprise-rating').textContent = place.rating;
     document.getElementById('surprise-reviews-count').textContent = `(${place.userRatingsTotal || 140}+ reviews)`;
@@ -299,13 +324,13 @@ export const UI = {
     document.getElementById('surprise-walk').textContent = `${place.walkTime} min walk`;
     document.getElementById('surprise-address-text').textContent = place.address;
     document.getElementById('surprise-review-snippet').textContent = place.reviewSnippet || '“Consistently delicious lunch options and quick service.”';
-    document.getElementById('surprise-maps-link').href = place.mapLink;
+    document.getElementById('surprise-maps-link').href = sanitizeUrl(place.mapLink);
 
     const tagsContainer = document.getElementById('surprise-tags');
     if (tagsContainer) {
       tagsContainer.innerHTML = place.tags.map(t => `
         <span class="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[10px] font-semibold border border-emerald-500/30">
-          ${t}
+          ${escapeHtml(t)}
         </span>
       `).join('');
     }
